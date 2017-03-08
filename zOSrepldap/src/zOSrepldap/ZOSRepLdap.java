@@ -270,6 +270,7 @@ public class ZOSRepLdap {
 
 			JCaContainer cContacts = new JCaContainer();
 			frame.readSourceMinderContacts(cContacts, "Mainframe");
+			// loop over contacts
 			
 			
 			// Write out processed repository in organization file
