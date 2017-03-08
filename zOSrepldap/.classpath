@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="C:/CACSCR/RTC Utils/db2jcc.jar"/>
+	<classpathentry kind="lib" path="C:/CACSCR/RTC Utils/db2jcc_license_cisuz.jar"/>
+	<classpathentry kind="lib" path="C:/CACSCR/RTC Utils/db2jcc_license_cu.jar"/>
+	<classpathentry kind="lib" path="C:/CACSCR/RTC Utils/json.jar"/>
+	<classpathentry kind="lib" path="C:/CACSCR/RTC Utils/commonldap.jar"/>
+	<classpathentry kind="lib" path="C:/CACSCR/RTC Utils/javax.persistence-2.2.0-m1.jar"/>
+	<classpathentry kind="lib" path="C:/CACSCR/RTC Utils/gson-2.2.2.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
