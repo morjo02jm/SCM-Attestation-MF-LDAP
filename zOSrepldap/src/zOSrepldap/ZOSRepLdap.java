@@ -252,16 +252,21 @@ public class ZOSRepLdap {
 							sContactEmail += aContacts[j]+"@ca.com";
 					}
 					sEntitlementAttrs = "adminby=" + cRepoInfo.getString("ADMINISTRATOR", iIndex);
-					sUserAttrs = "username=" +  cRepoInfo.getString("USERNAME", iIndex) + ";" +
+					sUserAttrs = "username=" +  cRepoInfo.getString("USERNAME", iIndex).replace("\'", "") + ";" +
 							     "read="     + (cRepoInfo.getString("ACC_READ", iIndex).equalsIgnoreCase("A")? "Y" : "N") + ";" +
 							     "write="    + (cRepoInfo.getString("ACC_WRITE", iIndex).equalsIgnoreCase("A")? "Y" : "N") + ";" +
 							     "update="   + (cRepoInfo.getString("ACC_UPDATE", iIndex).equalsIgnoreCase("A")? "Y" : "N") + ";" +
 							     "all="      + (cRepoInfo.getString("ACC_ALL", iIndex).equalsIgnoreCase("A")? "Y" : "N") + ";" +
 							     "none="     + (cRepoInfo.getString("ACC_READ", iIndex).equalsIgnoreCase("A")? "Y" : "N") ;
 					
+					String sProduct = cRepoInfo.getString("PRODUCT", iIndex);
+					if (sProduct.length()>=100) {
+						int cIndex = sProduct.indexOf(" (");
+						sProduct = cIndex < 0? sProduct:sProduct.substring(0, cIndex);
+					}
 					sValues = "('"  + sApp + "',"+
 							  "'"   + cRepoInfo.getString("APP_INSTANCE", iIndex) + "',"+
-							  "'"   + cRepoInfo.getString("PRODUCT", iIndex) + "',"+
+							  "'"   + sProduct + "',"+
 							  "'"   + sEntitlement2 + "',"+
 							  "'"   + cRepoInfo.getString("RESMASK", iIndex) + "',"+
 							  "'"   + sEntitlementAttrs + "',"+
@@ -281,6 +286,14 @@ public class ZOSRepLdap {
 					nRecords++;	
 				}
 			} // loop over records
+
+			if (!sqlStmt.isEmpty()) {
+				pstmt=conn.prepareStatement(sqlStmt);  
+				iResult = pstmt.executeUpdate();
+				if (iResult > 0) 
+					nRecordsWritten += iResult;					
+			}
+			frame.printLog(">>>:"+nRecordsWritten+" Inserted Records Made to DB.");
 		
 		} catch (ClassNotFoundException e) {
 			iReturnCode = 301;
@@ -294,6 +307,8 @@ public class ZOSRepLdap {
 		    System.exit(iReturnCode);
 		}
 	} // writeDBFromRepoContainer	
+	
+	
 	
 	public static void main(String[] args) {
 		int iParms = args.length;
