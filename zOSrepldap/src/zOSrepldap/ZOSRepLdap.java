@@ -437,7 +437,7 @@ public class ZOSRepLdap {
 				sSubject = "Notification of Problematic zOS Database Contacts";
 				sScope = "CIA DB2 Database";
 				
-		        String bodyText = frame.readTextResource("Notification_of_Noncompliant_Endevor_Contacts.txt", sScope, sProblems, "", "");								        								          
+		        String bodyText = frame.readTextResource("Notification_of_Noncompliant_Mainframe_Contacts.txt", sScope, sProblems, "", "");								        								          
 		        frame.sendEmailNotification(email, sSubject, bodyText, true);
 			} // had some notifications
 			
