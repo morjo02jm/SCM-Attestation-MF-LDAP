@@ -10,6 +10,16 @@ import commonldap.JCaContainer;
 public class ZOSRepLdap {
 	private static int iReturnCode = 0;
 	private static CommonLdap frame;
+// Repository container headings	
+	private static String sTagProject = "PRODUCT";
+	private static String sTagContact = "CONTACT";
+	private static String sTagApp     = "APP";
+	
+	// LDAP columns
+	private static String sTagPmfkey  = "sAMAccountName";
+	
+	// Notification
+	static String tagUL = "<ul> ";
 
 	ZOSRepLdap() {
 		// Leaving empty		
@@ -125,7 +135,8 @@ public class ZOSRepLdap {
 		
 	private static void readDBToRepoContainer(JCaContainer cRepoInfo, 
             								  String sDB2Password,
-            								  String sQuery) {
+            								  String sQuery,
+            								  String sProduct) {
 		PreparedStatement pstmt = null; 
 		String sqlStmt;
 		int iIndex = cRepoInfo.getKeyElementCount("APP");
@@ -138,7 +149,7 @@ public class ZOSRepLdap {
 			Class.forName("com.ibm.db2.jcc.DB2Driver");
 			Connection conn = DriverManager.getConnection(sJDBC);
 			
-			sqlError = "DB2. Error reading z/OS Dataset records from CIA database.";
+			sqlError = "DB2. Error reading z/OS Dataset records from CIA database for Product: "+sProduct+".";
 			sqlStmt = sQuery;
 			pstmt=conn.prepareStatement(sqlStmt); 
 			rSet = pstmt.executeQuery();
@@ -154,11 +165,10 @@ public class ZOSRepLdap {
 				cRepoInfo.setString("ROLEID",        sRoleID.trim(),                                       iIndex);
 				cRepoInfo.setString("RESMASK",       rSet.getString("RESMASK").trim(),                     iIndex);
 				cRepoInfo.setString("CONTACT",       "",                                                   iIndex);
-				cRepoInfo.setString("ADMINISTRATOR", rSet.getString("ADMINISTRATOR").toLowerCase().trim(), iIndex);
-				cRepoInfo.setString("DEPARTMENT",    rSet.getString("RESOURCE_OWNER").toLowerCase().trim(),iIndex);
+				cRepoInfo.setString("ADMINISTRATOR", rSet.getString("ADMINBY").toLowerCase().trim(), iIndex);
+				//cRepoInfo.setString("DEPARTMENT",    rSet.getString("RESOURCE_OWNER").toLowerCase().trim(),iIndex);
 				cRepoInfo.setString("USERID",        rSet.getString("USERID").toLowerCase().trim(),        iIndex);
-				//cRepoInfo.setString("USERNAME",      rSet.getString("FULLNAME").trim().replace(',', '|'),  iIndex);
-				cRepoInfo.setString("USERNAME",      rSet.getString("FULLNAME").trim(),                    iIndex);
+				cRepoInfo.setString("USERNAME",      rSet.getString("NAME").trim(),                        iIndex);
 				cRepoInfo.setString("ACC_READ",      rSet.getString("acc_read").trim(),                    iIndex);
 				cRepoInfo.setString("ACC_WRITE",     rSet.getString("acc_write").trim(),                   iIndex);
 				cRepoInfo.setString("ACC_UPDATE",    rSet.getString("acc_update").trim(),                  iIndex);
@@ -173,7 +183,7 @@ public class ZOSRepLdap {
 				iIndex++;
 			} // loop over record sets
 
-			frame.printLog(">>>:"+iIndex+" Records Read From DB2.");
+			frame.printLog(">>>:"+iIndex+" Records Read From DB2, including Product: "+sProduct+".");
 
 		} catch (ClassNotFoundException e) {
 			iReturnCode = 101;
@@ -289,6 +299,7 @@ public class ZOSRepLdap {
 		int iParms = args.length;
 		int iReturnCode = 0;
 		String sOutputFile = "";
+		String sInputFile = "";
 		String sBCC = "";
 		String sLogPath = "zOSrepldap.log";
 		String sDB2Password = "";
@@ -299,7 +310,11 @@ public class ZOSRepLdap {
 		// check parameters
 		for (int i = 0; i < iParms; i++)
 		{					
-			if (args[i].compareToIgnoreCase("-outputfile") == 0 )
+			if (args[i].compareToIgnoreCase("-inputfile") == 0 )
+			{
+				sInputFile = args[++i];
+			}			
+			else if (args[i].compareToIgnoreCase("-outputfile") == 0 )
 			{
 				sOutputFile = args[++i];
 			}			
@@ -342,20 +357,54 @@ public class ZOSRepLdap {
 	        	if (envName.equalsIgnoreCase("IMAG_DB_PASSWORD"))        
 	        		sImagDBPassword = frame.AESDecrypt(environ.get(envName));
 	        }
-			// Write out processed records to database
-			JCaContainer cRepoInfo = new JCaContainer();
 
-			JCaContainer cContacts = new JCaContainer();
-			frame.readSourceMinderContacts(cContacts, "Mainframe");
-			// loop over contact records
-			for (int iIndex=0; iIndex<cContacts.getKeyElementCount("Location"); iIndex++) {
-				String sProduct    = cContacts.getString("Product", iIndex);
-				String sStemMaster = cContacts.getString("Location", iIndex);
-				String sQuery = buildDsnCiaQuery(sProduct, sStemMaster);
-				readDBToRepoContainer(cRepoInfo, sDB2Password, sQuery);
+			JCaContainer cContact = new JCaContainer();
+			frame.readSourceMinderContacts(cContact, "Mainframe");
+
+			JCaContainer cRepoInfo = new JCaContainer();
+			
+			if (sInputFile.isEmpty()) {
+				// loop over contact records
+				for (int iIndex=0; iIndex<cContact.getKeyElementCount("Location"); iIndex++) {
+					String sProduct    = cContact.getString("Product", iIndex);
+					String sStemMaster = cContact.getString("Location", iIndex).trim();
+					if (!sStemMaster.isEmpty() &&
+						!sStemMaster.equalsIgnoreCase("N/A") &&
+						!sStemMaster.equalsIgnoreCase("Type:;SFS")) {					
+						if (sStemMaster.contains("Directories:;")) {
+							int cIndex = sStemMaster.indexOf("Directories:;");
+							sStemMaster = sStemMaster.substring(cIndex+13);
+						}
+						String sQuery = buildDsnCiaQuery(sProduct, sStemMaster);
+						readDBToRepoContainer(cRepoInfo, sDB2Password, sQuery, sProduct);
+					}
+				}
+			} else {
+				frame.readInputListGeneric(cRepoInfo, sInputFile, '\t');
 			}
 			
 			// Set contact information
+			for (int iIndex=0; iIndex<cContact.getKeyElementCount("Approver"); iIndex++) {
+				String sLocation = cContact.getString("Location", iIndex).replace("\"", "");
+				String sProject = cContact.getString("Product", iIndex);
+				String[] sApprovers = frame.readAssignedApprovers(cContact.getString("Approver", iIndex));
+				boolean bActive = cContact.getString("Active", iIndex).contentEquals("Y");
+				//String sReleases = cContact.getString("Release", iIndex);
+				
+				String sApprover = "";
+				for (int jIndex=0; jIndex<sApprovers.length; jIndex++) {
+					if (!sApprover.isEmpty()) 
+						sApprover += ";";
+					sApprover += sApprovers[jIndex];
+				}
+				
+				int[] iProjects = cRepoInfo.find("PRODUCT", sProject);
+				
+				for (int kIndex=0; kIndex<iProjects.length; kIndex++) {
+					if (cRepoInfo.getString("CONTACT", iProjects[kIndex]).isEmpty())
+						cRepoInfo.setString("CONTACT", bActive? sApprover : "toolsadmin", iProjects[kIndex]);
+				}
+			} // loop over contact records
 			
 			// Write out processed repository in organization file
 			if (!sOutputFile.isEmpty()) {
