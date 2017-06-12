@@ -381,17 +381,19 @@ public class ZOSRepLdap {
 			if (sInputFile.isEmpty()) {
 				// loop over contact records
 				for (int iIndex=0; iIndex<cContact.getKeyElementCount("Location"); iIndex++) {
-					String sProduct    = cContact.getString("Product", iIndex);
-					String sStemMaster = cContact.getString("Location", iIndex).trim();
-					if (!sStemMaster.isEmpty() &&
-						!sStemMaster.equalsIgnoreCase("N/A") &&
-						!sStemMaster.equalsIgnoreCase("Type:;SFS")) {					
-						if (sStemMaster.contains("Directories:;")) {
-							int cIndex = sStemMaster.indexOf("Directories:;");
-							sStemMaster = sStemMaster.substring(cIndex+13);
-						}
-						String sQuery = buildDsnCiaQuery(sProduct, sStemMaster);
-						readDBToRepoContainer(cRepoInfo, sDB2Password, sQuery, sProduct);
+					if (cContact.getString("Active", iIndex).contentEquals("Y")) {
+						String sProduct    = cContact.getString("Product", iIndex);
+						String sStemMaster = cContact.getString("Location", iIndex).trim();
+						if (!sStemMaster.isEmpty() &&
+							!sStemMaster.equalsIgnoreCase("N/A") &&
+							!sStemMaster.equalsIgnoreCase("Type:;SFS")) {					
+							if (sStemMaster.contains("Directories:;")) {
+								int cIndex = sStemMaster.indexOf("Directories:;");
+								sStemMaster = sStemMaster.substring(cIndex+13);
+							}
+							String sQuery = buildDsnCiaQuery(sProduct, sStemMaster);
+							readDBToRepoContainer(cRepoInfo, sDB2Password, sQuery, sProduct);
+						}						
 					}
 				}
 			} else {
