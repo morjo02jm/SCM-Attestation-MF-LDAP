@@ -315,6 +315,7 @@ public class ZOSRepLdap {
 		int iReturnCode = 0;
 		String sOutputFile = "";
 		String sInputFile = "";
+		String sUserFile = "";
 		String sBCC = "";
 		String sLogPath = "zOSrepldap.log";
 		String sDB2Password = "";
@@ -372,9 +373,9 @@ public class ZOSRepLdap {
 	        	if (envName.equalsIgnoreCase("IMAG_DB_PASSWORD"))        
 	        		sImagDBPassword = frame.AESDecrypt(environ.get(envName));
 	        }
-
+	        
 			JCaContainer cContact = new JCaContainer();
-			frame.readSourceMinderContacts(cContact, "Mainframe");
+			frame.readSourceMinderContacts(cContact, "Mainframe", cLDAP);
 
 			JCaContainer cRepoInfo = new JCaContainer();
 			
@@ -415,13 +416,95 @@ public class ZOSRepLdap {
 					sApprover += sApprovers[jIndex];
 				}
 				
+				if (sApprover.isEmpty()) {
+		    		if (sProblems.isEmpty()) 
+		    			sProblems = tagUL;			    		
+		    		sProblems+= "<li>The Mainframe product, <b>"+sProject+"</b>, has no valid contact.</li>\n";									
+				}
+				
 				int[] iProjects = cRepoInfo.find("PRODUCT", sProject);
 				
 				for (int kIndex=0; kIndex<iProjects.length; kIndex++) {
 					if (cRepoInfo.getString("CONTACT", iProjects[kIndex]).isEmpty())
-						cRepoInfo.setString("CONTACT", bActive? sApprover : "toolsadmin", iProjects[kIndex]);
+						cRepoInfo.setString("CONTACT", sApprover, iProjects[kIndex]);
 				}
 			} // loop over contact records
+			
+			// check user ids
+			JCaContainer cUsers = new JCaContainer();
+			frame.readInputListGeneric(cUsers, "EndevorUsers.csv", ',');
+			
+			for (int iIndex=0; iIndex<cRepoInfo.getKeyElementCount(sTagApp); iIndex++) {
+				if (!cRepoInfo.getString(sTagApp, iIndex).isEmpty()) {
+					boolean bLocalGeneric=false;
+					boolean bTerminated=false;
+
+					String sID  = cRepoInfo.getString("USERID", iIndex);
+					if (sID.contains("?")) 
+						sID = sID.substring(0, sID.indexOf('?'));
+					String sRealID = sID;
+					String sUseID  = sID;
+
+					int[] iRepl = cUsers.find("TOPSECRET", sID);
+					
+					boolean bUnmapped = false;
+					if (iRepl.length > 0) {
+						sRealID = cUsers.getString("CADOMAIN", iRepl[0]);
+						if (sRealID.equals("Generic")) {
+							bLocalGeneric = true;
+						}
+						else if (sRealID.equals("Terminated")) {
+							bTerminated = true;
+						}
+						else {
+							sUseID = sRealID;
+						}
+					}
+					else {
+						iRepl = cUsers.find("CADOMAIN",sID);
+						if (iRepl.length == 0)
+							bUnmapped = true;
+					}
+					
+					int[] iLDAP = cLDAP.find(sTagPmfkey, sUseID);
+					
+					if (iLDAP.length == 0 && !bLocalGeneric) {
+			    		int[] iUsers = cRepoInfo.find("USERID", sID); 	
+
+			    		if (!bLocalGeneric) {
+							for (int i=0; i<iUsers.length; i++) {
+								String sApp = cRepoInfo.getString(sTagApp, iUsers[i]);
+								if (!sApp.isEmpty()) {									
+									if (bUnmapped) {
+							    		if (sProblems.isEmpty()) 
+							    			sProblems = tagUL;			    		
+							    		sProblems+= "<li>The Mainframe dataset user id, <b>"+sID+"</b>, references an unmapped user.</li>\n";									
+									}
+									else {				
+										if (bShowTerminated) {											
+								    		if (sProblems.isEmpty()) 
+								    			sProblems = tagUL;			    		
+								    		sProblems+= "<li>The Mainframe dataset user id, <b>"+sID+"</b>, references a terminated user.</li>\n";									
+										}
+									}
+						    		for (int j=i+1; j<iUsers.length; j++) {
+						    				cRepoInfo.setString(sTagApp, "", iUsers[j]);
+						    		}
+								}
+								cRepoInfo.setString(sTagApp, "", iUsers[i]);
+							}
+			    		}
+					} 
+					else if (bLocalGeneric || !sID.equalsIgnoreCase(sRealID)){
+			    		int[] iUsers = cRepoInfo.find("USERID", sID); 	
+			    		for (int i=0; i<iUsers.length; i++) {
+			    			cRepoInfo.setString("USERID", 
+			    					            (bLocalGeneric? sUseID+"?" : sUseID),
+			    					            iUsers[i]);
+			    		}
+					}
+				}
+			}
 			
 			// Write out processed repository in organization file
 			if (!sOutputFile.isEmpty()) {
