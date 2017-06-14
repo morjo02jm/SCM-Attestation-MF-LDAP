@@ -426,6 +426,7 @@ public class ZOSRepLdap {
 				
 				for (int kIndex=0; kIndex<iProjects.length; kIndex++) {
 					if (cRepoInfo.getString("CONTACT", iProjects[kIndex]).isEmpty())
+						//cRepoInfo.setString("CONTACT", bActive? sApprover:"toolsadmin", iProjects[kIndex]);
 						cRepoInfo.setString("CONTACT", sApprover, iProjects[kIndex]);
 				}
 			} // loop over contact records
