@@ -1,5 +1,6 @@
 TOPSECRET,CADOMAIN
 =dept402,Generic
+=dept410,Generic
 =dept411,Generic
 =dept421,Generic
 =fmidept,Generic
@@ -44,6 +45,7 @@ apcl2gts,Generic
 apcsrvr,Generic
 apmqmgr,Generic
 appc,Generic
+appsptf,Generic
 appsptf1,Generic
 appsptf2,Generic
 appsptf3,Generic
@@ -227,7 +229,7 @@ dcmqa9,Generic
 deara01,Terminated
 dellya1,delly01
 delro01,Terminated
-demyval,Generic
+demyva1,Generic
 denm,Generic
 denm3,Generic
 dentoa1,dento01
@@ -265,6 +267,7 @@ enf,Generic
 enfvse,Generic
 enghe02,Terminated
 enrja01,Terminated
+epc,Generic
 esmldap,Generic
 espmgr,Generic
 espqa,Generic
@@ -276,6 +279,7 @@ fagsc01,Terminated
 fauan06,Terminated
 faverm,Generic
 favern,Generic
+faverv,Generic
 feesea1,feese01
 felvi02,Terminated
 filma04,Terminated
@@ -322,6 +326,7 @@ grojea7,groje07
 gsvxhis,Generic
 guecha4,guech04
 guiria1,guiri01
+guirib1,guiri01
 guiric1,guiri01
 guiri1a,guiri01
 gutja03,Terminated
@@ -472,7 +477,7 @@ libr41,Generic
 librvsee,Generic
 lilana1,lilan01
 lilanb1,lilan01
-lilseop,Generic
+lisleop,Generic
 linch09,Terminated
 linma1a,linma10
 linma1b,linma10
@@ -492,9 +497,9 @@ lrgbatch,Generic
 lufda02,Terminated
 lvl1col3,Generic
 lvl1supp,Generic
-lvllvse1,Generic
-lvllvse4,Generic
-lvllvse9,Generic
+lvl1vse1,Generic
+lvl1vse4,Generic
+lvl1vse9,Generic
 lyaly01,Terminated
 maas1,Generic
 maasbld,Generic
@@ -668,7 +673,7 @@ petjoa1,petjo01
 pfldaa2,pflda02
 picmia3,picmi03
 piedo03,Terminated
-piest01,Terminated
+piets01,Terminated
 piqma01,Terminated
 plapea3,plape03
 plube01,Terminated
@@ -836,7 +841,7 @@ stccsf,Generic
 stcdef,Generic
 stcdev,Generic
 stcsys,Generic
-stejea9.steje08
+stejea8,steje08
 steje08,Terminated
 steli06,Terminated
 stemi20,Terminated
