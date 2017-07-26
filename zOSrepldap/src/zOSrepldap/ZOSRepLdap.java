@@ -3,6 +3,7 @@ package zOSrepldap;
 import java.sql.*;
 import java.util.*;
 import java.io.*;
+import gvjava.org.json.*;
 
 import commonldap.CommonLdap;
 import commonldap.JCaContainer;
@@ -26,12 +27,94 @@ public class ZOSRepLdap {
 	}
 
 	private static String buildDsnCiaQuery(String sProduct,
-			                               String stemMaster)
+			                               String stemMaster,
+			                               boolean isDSN,
+			                               boolean isVMVSE,
+			                               String sVMVSEMaster)
 	{
 		String[] stems = null;
+		List<String> locations = new ArrayList<String>();
+		List<String> types = new ArrayList<String>();
+		
 		boolean stemsExist = false;
+		boolean locationsExist = false;
+
+		String permQueryRoleTemplate1 =  "SELECT DISTINCT "
+				+ "P1.RESCLASS AS APP, " 
+				+ "P1.SYSID AS APP_INSTANCE,"
+				+ "\'"+sProduct+"\' AS PRODUCT,"
+			  		+ "SUBSTR(R1.USERID,1,8) AS USERID, "                             
+			  		+ "P1.AUTHTYPE, "                                                  
+			  		+ "SUBSTR(P1.AUTHID,1,8) AS ROLEID, "                             
+			  		+ "SUBSTR(P1.RESMASK,1,44) AS RESMASK, "
+			  		+ "P1.ACC_READ, "
+			  		+ "P1.ACC_WRITE, "
+			  		+ "P1.ACC_UPDATE, "
+			  		+ "P1.ACC_ALL, "
+			  		+ "P1.ACC_NONE, "
+			  		+ "P1.ACC_CREATE, "
+			  		+ "P1.ACC_FETCH, "
+			  		+ "P1.ACC_SCRATCH, "
+			  		+ "P1.ACC_CONTROL, "
+			  		+ "P1.ACC_INQUIRE, "
+			  		+ "P1.ACC_SET, "
+			  		+ "P1.ADMINBY, "
+			  		//+ "P1.ADMINDATE, "
+			  		//+ "P1.ADMINTIME, "
+			  		+ "U1.NAME "
+				  + "FROM "                                                                 
+				  		+ "TABLE(CAIESQ.CIA_RESOURCE_MATCH('";
+
+		String permQueryUserTemplate1 = "SELECT DISTINCT "
+				+ "P2.RESCLASS AS APP, "
+				+ "P2.SYSID AS APP_INSTANCE, "
+				+ "\'"+sProduct+"\' AS PRODUCT,"
+				+ "SUBSTR(P2.AUTHID,1,8) AS USERID, "                             
+				+ "P2.AUTHTYPE, "                                                 
+				+ "'   ' AS ROLEID, "                                              
+				+ "SUBSTR(P2.RESMASK,1,44) AS RESMASK, "   
+				+ "P2.ACC_READ, "
+				+ "P2.ACC_WRITE, "
+				+ "P2.ACC_UPDATE, "
+				+ "P2.ACC_ALL, "
+				+ "P2.ACC_NONE, "
+				+ "P2.ACC_CREATE, "
+				+ "P2.ACC_FETCH, "
+				+ "P2.ACC_SCRATCH, "
+				+ "P2.ACC_CONTROL, "
+				+ "P2.ACC_INQUIRE, "
+				+ "P2.ACC_SET, "
+				+ "P2.ADMINBY, "
+				//+ "P2.ADMINDATE, "
+				//+ "P2.ADMINTIME, "
+				+ "'   ' AS NAME "
+			+"FROM "       
+				+ "TABLE(CAIESQ.CIA_RESOURCE_MATCH('";
+
+		//DSN		
+		String permQueryRoleTemplate2a = 	 "','DATASET','%','PREFIX')) AS P1, "       
+											+ "(CIADB01.ROLEXREF AS R1 INNER JOIN CIADB01.USERINFO AS U1 ON R1.USERID=U1.USERID AND R1.SYSID=U1.SYSID) "                                           
+										+"WHERE P1.SYSID = R1.SYSID "
+										+"AND P1.SYSID <> \'SYSC\' "
+										+"AND   P1.AUTHID = R1.ROLEID ";
+		
+		
+		String permQueryUserTemplate2a = 	 "','DATASET','%','PREFIX')) AS P2 "  
+										+"WHERE P2.AUTHTYPE = 'U' "
+										+"AND   P2.SYSID <> \'SYSC\' ";
+
+		//VMVSE
+		String permQueryRoleTemplate2b = 	 "','%','PREFIX')) AS P1, "       
+						+ "(CIADB01.ROLEXREF AS R1 INNER JOIN CIADB01.USERINFO AS U1 ON R1.USERID=U1.USERID AND R1.SYSID=U1.SYSID) "                                           
+					+"WHERE P1.SYSID = R1.SYSID "
+					+"AND   P1.AUTHID = R1.ROLEID ";
+
+		String permQueryUserTemplate2b = 	 "','%','PREFIX')) AS P2 "  
+					+"WHERE P2.AUTHTYPE = 'U' ";
+						 
+		String permQuery = "";
 				
-		if (stemMaster != null)
+		if (isDSN && stemMaster != null && !stemMaster.contentEquals("Type:;SFS"))
 		{
 			stems = stemMaster.split("[;]");
 			stemsExist = true;
@@ -46,85 +129,55 @@ public class ZOSRepLdap {
 				}
 			}	
 		}
-				
-		String permQueryRoleTemplate1 =  "SELECT DISTINCT "
-			    							+ "P1.RESCLASS AS APP, " 
-											+ "P1.SYSID AS APP_INSTANCE,"
-			    							+ "\'"+sProduct+"\' AS PRODUCT,"
-			      					  		+ "SUBSTR(R1.USERID,1,8) AS USERID, "                             
-			      					  		+ "P1.AUTHTYPE, "                                                  
-			      					  		+ "SUBSTR(P1.AUTHID,1,8) AS ROLEID, "                             
-			      					  		+ "SUBSTR(P1.RESMASK,1,44) AS RESMASK, "
-			      					  		+ "P1.ACC_READ, "
-			      					  		+ "P1.ACC_WRITE, "
-			      					  		+ "P1.ACC_UPDATE, "
-			      					  		+ "P1.ACC_ALL, "
-			      					  		+ "P1.ACC_NONE, "
-			      					  		+ "P1.ACC_CREATE, "
-			      					  		+ "P1.ACC_FETCH, "
-			      					  		+ "P1.ACC_SCRATCH, "
-			      					  		+ "P1.ACC_CONTROL, "
-			      					  		+ "P1.ACC_INQUIRE, "
-			      					  		+ "P1.ACC_SET, "
-			      					  		+ "P1.ADMINBY, "
-			      					  		//+ "P1.ADMINDATE, "
-			      					  		//+ "P1.ADMINTIME, "
-			      					  		+ "U1.NAME "
-			      					  + "FROM "                                                                 
-			      					  		+ "TABLE(CAIESQ.CIA_RESOURCE_MATCH('";
 		
-		String permQueryRoleTemplate2 = 	 "','DATASET','%','PREFIX')) AS P1, "       
-											+ "(CIADB01.ROLEXREF AS R1 INNER JOIN CIADB01.USERINFO AS U1 ON R1.USERID=U1.USERID AND R1.SYSID=U1.SYSID) "                                           
-										+"WHERE P1.SYSID = R1.SYSID "
-										+"AND P1.SYSID <> \'SYSC\' "
-										+"AND   P1.AUTHID = R1.ROLEID ";
-		
-		String permQueryUserTemplate1 = "SELECT DISTINCT "
-											+ "P2.RESCLASS AS APP, "
-											+ "P2.SYSID AS APP_INSTANCE, "
-			    							+ "\'"+sProduct+"\' AS PRODUCT,"
-											+ "SUBSTR(P2.AUTHID,1,8) AS USERID, "                             
-											+ "P2.AUTHTYPE, "                                                 
-											+ "'   ' AS ROLEID, "                                              
-											+ "SUBSTR(P2.RESMASK,1,44) AS RESMASK, "   
-											+ "P2.ACC_READ, "
-											+ "P2.ACC_WRITE, "
-											+ "P2.ACC_UPDATE, "
-											+ "P2.ACC_ALL, "
-											+ "P2.ACC_NONE, "
-											+ "P2.ACC_CREATE, "
-											+ "P2.ACC_FETCH, "
-											+ "P2.ACC_SCRATCH, "
-											+ "P2.ACC_CONTROL, "
-											+ "P2.ACC_INQUIRE, "
-											+ "P2.ACC_SET, "
-											+ "P2.ADMINBY, "
-											//+ "P2.ADMINDATE, "
-											//+ "P2.ADMINTIME, "
-											+ "'   ' AS NAME "
-										+"FROM "       
-											+ "TABLE(CAIESQ.CIA_RESOURCE_MATCH('";
-		
-		String permQueryUserTemplate2 = 	 "','DATASET','%','PREFIX')) AS P2 "  
-										+"WHERE P2.AUTHTYPE = 'U' "
-										+"AND   P2.SYSID <> \'SYSC\' ";
-		
-				 
-		String permQuery = "";
+		if (isVMVSE && !sVMVSEMaster.isEmpty()) {
+			sVMVSEMaster = sVMVSEMaster.replace("\"[", "[");
+			sVMVSEMaster = sVMVSEMaster.replace("]\"", "]");
+			sVMVSEMaster = sVMVSEMaster.replace("\"\"", "\"");
+			
+			try {				
+				JSONArray ja = new JSONArray(sVMVSEMaster);
+				for (int j=0; j<ja.length(); j++) {
+					String sLocation = ja.getJSONObject(j).getString("location");
+					String sType = ja.getJSONObject(j).getString("type");
+					locations.add(sLocation);
+					types.add(sType);
+					locationsExist = true;
+				}
+			}  catch (JSONException e) {
+				iReturnCode = 1008;
+			    frame.printErr(e.getLocalizedMessage());
+			    System.exit(iReturnCode);		    							
+			}
+		}
 		
 		if (stemsExist)
 		{
 			for (int i = 0; i < stems.length; i++)
 			{
-				permQuery += permQueryRoleTemplate1 + stems[i] + permQueryRoleTemplate2 + " UNION ";
+				permQuery += permQueryRoleTemplate1 + stems[i] + permQueryRoleTemplate2a + " UNION ";
 			}
 										
 			
 			for (int i = 0; i < stems.length; i++)
 			{
-				permQuery += permQueryUserTemplate1 + stems[i] + permQueryUserTemplate2; 
-				if (i < stems.length - 1) permQuery += " UNION ";
+				permQuery += permQueryUserTemplate1 + stems[i] + permQueryUserTemplate2a; 
+				if (i < stems.length - 1 || locationsExist) permQuery += " UNION ";
 			}
+		}
+		
+		if (locationsExist) {
+			for (int i = 0; i < locations.size(); i++)
+			{
+				permQuery += permQueryRoleTemplate1 + locations.get(i) + "','" + types.get(i) + permQueryRoleTemplate2b + " UNION ";					
+			}
+			
+			for (int i = 0; i < locations.size(); i++)
+			{
+				permQuery += permQueryUserTemplate1 + locations.get(i) + "','" + types.get(i) + permQueryUserTemplate2b; 
+				
+				if (i < locations.size() - 1) permQuery += " UNION ";
+			}			
 		}
 				
 		permQuery = permQuery + ";";
@@ -385,14 +438,19 @@ public class ZOSRepLdap {
 					if (cContact.getString("Active", iIndex).contentEquals("Y")) {
 						String sProduct    = cContact.getString("Product", iIndex);
 						String sStemMaster = cContact.getString("Location", iIndex).trim();
+						boolean isDSN   = cContact.getString("SourceResources", iIndex).contains("DSN");
+						boolean isVMVSE = cContact.getString("SourceResources", iIndex).contains("VMVSE");
+						String sVMVSEMaster = cContact.getString("VMVSELocation", iIndex).trim();
+
 						if (!sStemMaster.isEmpty() &&
 							!sStemMaster.equalsIgnoreCase("N/A") &&
-							!sStemMaster.equalsIgnoreCase("Type:;SFS")) {					
+							(isVMVSE || !sStemMaster.equalsIgnoreCase("Type:;SFS"))) 
+						{					
 							if (sStemMaster.contains("Directories:;")) {
 								int cIndex = sStemMaster.indexOf("Directories:;");
 								sStemMaster = sStemMaster.substring(cIndex+13);
 							}
-							String sQuery = buildDsnCiaQuery(sProduct, sStemMaster);
+							String sQuery = buildDsnCiaQuery(sProduct, sStemMaster, isDSN, isVMVSE, sVMVSEMaster);
 							readDBToRepoContainer(cRepoInfo, sDB2Password, sQuery, sProduct);
 						}						
 					}
