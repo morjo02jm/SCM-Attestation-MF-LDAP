@@ -7,11 +7,15 @@ import gvjava.org.json.*;
 
 import commonldap.CommonLdap;
 import commonldap.JCaContainer;
+import commonldap.SDTicket;
 
 public class ZOSRepLdap {
 	private static int iReturnCode = 0;
 	private static CommonLdap frame;
-// Repository container headings	
+	private static String sProblems = "";
+	private static List<String> ticketProblems = new ArrayList<String>();
+
+	// Repository container headings	
 	private static String sTagProject = "PRODUCT";
 	private static String sTagContact = "CONTACT";
 	private static String sTagApp     = "APP";
@@ -373,7 +377,6 @@ public class ZOSRepLdap {
 		String sLogPath = "zOSrepldap.log";
 		String sDB2Password = "";
 		String sImagDBPassword = "";	
-		String sProblems = "";
 		boolean bShowTerminated = false;
 		
 		// check parameters
@@ -406,6 +409,7 @@ public class ZOSRepLdap {
 				                   "                     [-bcc emailadress] [-log textfile] [-h |-?]");
 				System.out.println(" -inputfile option specifies the attestation input file to validate (tsv)");
 				System.out.println(" -outputfile option specifies the attestation output file (csv)");
+				System.out.println(" -showterminated option creates notifications for terminated users");
 				System.out.println(" -bcc option specifies an email address to bcc on notifications sent to users");
 				System.out.println(" -log option specifies location log file.");
 				System.exit(iReturnCode);
@@ -494,6 +498,7 @@ public class ZOSRepLdap {
 			frame.readInputListGeneric(cUsers, "tss_user_mapping.csv", ',');
 			
 			for (int iIndex=0; iIndex<cRepoInfo.getKeyElementCount(sTagApp); iIndex++) {
+				String sProduct, sResmask, sAuthtype, sRoleid;
 				if (!cRepoInfo.getString(sTagApp, iIndex).isEmpty()) {
 					boolean bLocalGeneric=false;
 					boolean bTerminated=false;
@@ -543,13 +548,29 @@ public class ZOSRepLdap {
 										if (bShowTerminated) {											
 								    		if (sProblems.isEmpty()) 
 								    			sProblems = tagUL;			    		
-								    		sProblems+= "<li>The Mainframe dataset user id, <b>"+sID+"</b>, references a terminated user.</li>\n";									
+								    		sProblems+= "<li>The Mainframe SCM user id, <b>"+sID+"</b>, references a terminated user.</li>\n";									
 										}
 									}
 						    		for (int j=i+1; j<iUsers.length; j++) {
-						    				cRepoInfo.setString(sTagApp, "", iUsers[j]);
+						    			if (bShowTerminated) {
+						    				sProduct  = cRepoInfo.getString("PRODUCT", iUsers[j]);
+						    				sAuthtype = cRepoInfo.getString("AUTHTYPE", iUsers[j]);
+						    				if (sAuthtype.equalsIgnoreCase("R"))
+						    					sAuthtype += ":"+cRepoInfo.getString("ROLEID", iUsers[j]);
+						    				sResmask  = cRepoInfo.getString("RESMASK", iUsers[j]);
+						    				ticketProblems.add("User access for terminated user with Mainframe SCM user id, "+sID+", should be removed from product/authtype:roleid/resmask: "+sProduct+"/"+sAuthtype+"/"+sResmask+".");												
+						    			}
+						    			cRepoInfo.setString(sTagApp, "", iUsers[j]);
 						    		}
 								}
+				    			if (bShowTerminated) {
+				    				sProduct  = cRepoInfo.getString("PRODUCT", iUsers[i]);
+				    				sAuthtype = cRepoInfo.getString("AUTHTYPE", iUsers[i]);
+				    				if (sAuthtype.equalsIgnoreCase("R"))
+				    					sAuthtype += ":"+cRepoInfo.getString("ROLEID", iUsers[i]);
+				    				sResmask  = cRepoInfo.getString("RESMASK", iUsers[i]);
+				    				ticketProblems.add("User access for terminated user with CA Endeavor user id, "+sID+", should be removed from product/authtype:roleid/resmask: "+sProduct+"/"+sAuthtype+"/"+sResmask+".");
+				    			}
 								cRepoInfo.setString(sTagApp, "", iUsers[i]);
 							}
 			    		}
@@ -574,13 +595,32 @@ public class ZOSRepLdap {
 			writeDBFromRepoContainer(cRepoInfo, sImagDBPassword);
 			
 			if (!sProblems.isEmpty()) {
-				sProblems+="</ul>\n";
 				String email = "faudo01@ca.com";
-				String sSubject, sScope;
+				String sSubject, sScope, sTicket;
 				
-				sSubject = "Notification of Problematic zOS Database Contacts";
+				sSubject = "Notification of Mainframe SCM Governance Problems and Changes";
 				sScope = "CIA DB2 Database";
+				sTicket = "Mainframe:System Mainframe-Other SCM User Access";
 				
+				
+		        //create a service desk ticket from ticketProblem
+		        String prblms = "";
+		        for(String prbm: ticketProblems){
+		            prblms += prbm + "\n";
+		        }
+		        
+		        if(!prblms.isEmpty()) {
+		        	String ticket = "";
+		            SDTicket sd = new SDTicket("test");
+		            ticket = sd.serviceTicket(sTicket, prblms, "GIS-STO-Mainframe-Management-L2", "", frame);
+		        	if (!ticket.isEmpty()) {	
+		        		if (!sProblems.isEmpty()) 
+		        			sProblems += tagUL;
+		        		sProblems += "<li>CSM ticket, <b>SRQ#"+ticket+"</b> created.</li>";
+		        	}	
+		        }
+				
+				sProblems+="</ul>\n";				
 		        String bodyText = frame.readTextResource("Notification_of_Noncompliant_Mainframe_Contacts.txt", sScope, sProblems, "", "");								        								          
 		        frame.sendEmailNotification(email, sSubject, bodyText, true);
 			} // had some notifications
