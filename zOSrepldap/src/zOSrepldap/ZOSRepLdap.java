@@ -611,7 +611,7 @@ public class ZOSRepLdap {
 		        
 		        if(!prblms.isEmpty()) {
 		        	String ticket = "";
-		            SDTicket sd = new SDTicket("test");
+		            SDTicket sd = new SDTicket("production");
 		            ticket = sd.serviceTicket(sTicket, prblms, "GIS-STO-Mainframe-Management-L2", "", frame);
 		        	if (!ticket.isEmpty()) {	
 		        		if (sProblems.isEmpty()) 
