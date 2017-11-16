@@ -509,7 +509,7 @@ public class ZOSRepLdap {
 					String sRealID = sID;
 					String sUseID  = sID;
 
-					int[] iRepl = cUsers.find("TOPSECRET", sID);
+					int[] iRepl = cUsers.find("TOPSECRET", sID.toLowerCase());
 					
 					boolean bUnmapped = false;
 					if (iRepl.length > 0) {
