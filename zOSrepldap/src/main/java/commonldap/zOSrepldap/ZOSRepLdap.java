@@ -3,7 +3,7 @@ package commonldap.zOSrepldap;
 import java.sql.*;
 import java.util.*;
 import java.io.*;
-import gvjava.org.json.*;
+import org.json.*;
 
 import commonldap.commonldap.CommonLdap;
 import commonldap.commonldap.JCaContainer;

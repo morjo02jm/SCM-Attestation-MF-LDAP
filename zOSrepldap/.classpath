@@ -21,8 +21,6 @@
 	<classpathentry kind="lib" path="lib/db2jcc_license_cisuz.jar"/>
 	<classpathentry kind="lib" path="lib/db2jcc_license_cu.jar"/>
 	<classpathentry kind="lib" path="lib/db2jcc.jar"/>
-	<classpathentry kind="lib" path="lib/javax.mail.jar"/>
-	<classpathentry kind="lib" path="lib/json.jar"/>
 	<classpathentry kind="lib" path="lib/sqljdbc4.jar"/>
 	<classpathentry kind="lib" path="C:/CACSCR/RTC Utils/commonldap.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
