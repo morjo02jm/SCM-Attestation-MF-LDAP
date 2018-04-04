@@ -375,6 +375,7 @@ public class ZOSRepLdap {
 		String sUserFile = "";
 		String sBCC = "";
 		String sLogPath = "zOSrepldap.log";
+		String sMapFile = "tss_user_mapping.csv";
 		String sDB2Password = "";
 		String sImagDBPassword = "";	
 		boolean bShowTerminated = false;
@@ -389,6 +390,10 @@ public class ZOSRepLdap {
 			else if (args[i].compareToIgnoreCase("-outputfile") == 0 )
 			{
 				sOutputFile = args[++i];
+			}			
+			else if (args[i].compareToIgnoreCase("-mapfile") == 0 )
+			{
+				sMapFile = args[++i];
 			}			
 			else if (args[i].compareToIgnoreCase("-bcc") == 0 )
 			{
@@ -495,7 +500,7 @@ public class ZOSRepLdap {
 			
 			// check user ids
 			JCaContainer cUsers = new JCaContainer();
-			frame.readInputListGeneric(cUsers, "tss_user_mapping.csv", ',');
+			frame.readInputListGeneric(cUsers, sMapFile, ',');
 			
 			for (int iIndex=0; iIndex<cRepoInfo.getKeyElementCount(sTagApp); iIndex++) {
 				String sProduct, sResmask, sAuthtype, sRoleid;
@@ -517,15 +522,12 @@ public class ZOSRepLdap {
 						if (sRealID.equals("Generic")) {
 							bLocalGeneric = true;
 						}
-						else if (sRealID.equals("Terminated")) {
-							bTerminated = true;
-						}
 						else {
 							sUseID = sRealID;
 						}
 					}
 					else {
-						iRepl = cUsers.find("CADOMAIN",sID);
+						iRepl = cUsers.find("CADOMAIN",sID.toLowerCase());
 						if (iRepl.length == 0)
 							bUnmapped = true;
 					}
@@ -569,7 +571,7 @@ public class ZOSRepLdap {
 				    				if (sAuthtype.equalsIgnoreCase("R"))
 				    					sAuthtype += ":"+cRepoInfo.getString("ROLEID", iUsers[i]);
 				    				sResmask  = cRepoInfo.getString("RESMASK", iUsers[i]);
-				    				ticketProblems.add("User access for terminated user with CA Endeavor user id, "+sID+", should be removed from product/authtype:roleid/resmask: "+sProduct+"/"+sAuthtype+"/"+sResmask+".");
+				    				ticketProblems.add("User access for terminated user with Mainframe SCM user id, "+sID+", should be removed from product/authtype:roleid/resmask: "+sProduct+"/"+sAuthtype+"/"+sResmask+".");
 				    			}
 								cRepoInfo.setString(sTagApp, "", iUsers[i]);
 							}
@@ -583,7 +585,18 @@ public class ZOSRepLdap {
 			    					            iUsers[i]);
 			    		}
 					}
+					
+					if (bUnmapped && !bLocalGeneric && iLDAP.length > 0) {
+						int cIndex = cUsers.getKeyElementCount("CADOMAIN");
+						cUsers.setString("TOPSECRET", sID, cIndex);
+						cUsers.setString("CADOMAIN", sUseID.toLowerCase(), cIndex);
+					}
 				}
+			} // loop over assignments
+			
+			// Write out tss mapping file with changes
+			if (!cUsers.isEmpty()) {
+				frame.writeCSVFileFromListGeneric(cUsers, sMapFile, ',', null, false);
 			}
 			
 			// Write out processed repository in organization file
