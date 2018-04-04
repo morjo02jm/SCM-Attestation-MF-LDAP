@@ -611,6 +611,10 @@ public class ZOSRepLdap {
 				String email = "faudo01@ca.com";
 				String sSubject, sScope, sTicket;
 				
+				if (sProblems.contains("terminated user")) {
+					email = email+";bigag01@ca.com"; //Team-GIS-Mainframe-PlatformManagement-Security?
+				}
+				
 				sSubject = "Notification of Mainframe SCM Governance Problems and Changes";
 				sScope = "CIA DB2 Database";
 				sTicket = "Mainframe:System Mainframe-Other SCM User Access";
