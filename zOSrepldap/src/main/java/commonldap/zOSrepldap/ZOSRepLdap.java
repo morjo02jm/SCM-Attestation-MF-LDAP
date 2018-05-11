@@ -539,7 +539,7 @@ public class ZOSRepLdap {
 					int[] iLDAP = cLDAP.find(sTagPmfkey, sUseID);
 					
 					if (iLDAP.length == 0 && !bLocalGeneric) {
-			    		int[] iUsers = cRepoInfo.find("USERID", sID); 	
+			    		int[] iUsers = cRepoInfo.find("USERID", sID); 
 
 			    		if (!bLocalGeneric) {
 							for (int i=0; i<iUsers.length; i++) {
@@ -557,28 +557,22 @@ public class ZOSRepLdap {
 								    		sProblems+= "<li>The Mainframe SCM user id, <b>"+sID+"</b>, references a terminated user.</li>\n";									
 										}
 									}
-						    		for (int j=i+1; j<iUsers.length; j++) {
-						    			if (bShowTerminated) {
-						    				sProduct  = cRepoInfo.getString("PRODUCT", iUsers[j]);
-						    				sAuthtype = cRepoInfo.getString("AUTHTYPE", iUsers[j]);
-						    				if (sAuthtype.equalsIgnoreCase("R"))
-						    					sAuthtype += ":"+cRepoInfo.getString("ROLEID", iUsers[j]);
-						    				sResmask  = cRepoInfo.getString("RESMASK", iUsers[j]);
-						    				ticketProblems.add("User access for terminated user with Mainframe SCM user id, "+sID+", should be removed from product/authtype:roleid/resmask: "+sProduct+"/"+sAuthtype+"/"+sResmask+".");												
+									
+						    		String sSysIdArr = "{";
+						    		for (int j=i; j<iUsers.length; j++) {
+						    			String sSysId = cRepoInfo.getString("APP_INSTANCE", iUsers[j]);
+						    			if (!sSysIdArr.contains(sSysId)) {
+						    				sSysIdArr += (i==j?"":";") + sSysId;
 						    			}
 						    			cRepoInfo.setString(sTagApp, "", iUsers[j]);
 						    		}
-								}
-				    			if (bShowTerminated) {
-				    				sProduct  = cRepoInfo.getString("PRODUCT", iUsers[i]);
-				    				sAuthtype = cRepoInfo.getString("AUTHTYPE", iUsers[i]);
-				    				if (sAuthtype.equalsIgnoreCase("R"))
-				    					sAuthtype += ":"+cRepoInfo.getString("ROLEID", iUsers[i]);
-				    				sResmask  = cRepoInfo.getString("RESMASK", iUsers[i]);
-				    				ticketProblems.add("User access for terminated user with Mainframe SCM user id, "+sID+", should be removed from product/authtype:roleid/resmask: "+sProduct+"/"+sAuthtype+"/"+sResmask+".");
-				    			}
-								cRepoInfo.setString(sTagApp, "", iUsers[i]);
-							}
+						    		sSysIdArr += "}";
+						    		
+					    			if (bShowTerminated) {
+					    				ticketProblems.add("USERTSS.ASUSPEND should be set for TSS user id, "+sID+", with SYSIDs, "+sSysIdArr+".");
+					    			}
+								} // next unprocessed entry
+							} // loop over users with no corporate id
 			    		}
 					} 
 					else if (bLocalGeneric || !sID.equalsIgnoreCase(sRealID)){
