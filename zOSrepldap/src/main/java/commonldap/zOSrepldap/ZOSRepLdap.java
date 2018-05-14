@@ -97,26 +97,26 @@ public class ZOSRepLdap {
 
 		//DSN		
 		String permQueryRoleTemplate2a = 	 "','DATASET','%','PREFIX')) AS P1, "       
-											+ "(CIADB01.ROLEXREF AS R1 INNER JOIN CIADB01.USERINFO AS U1 ON R1.USERID=U1.USERID AND R1.SYSID=U1.SYSID INNER JOIN CIADB01.USERTSS AS T1 ON T1.SYSID=U1.SYSID AND T1.USERID=U1.USERID ) "                                           
+											+ "(CIADB01.ROLEXREF AS R1 INNER JOIN CIADB01.USERINFO AS U1 ON R1.USERID=U1.USERID AND R1.SYSID=U1.SYSID LEFT JOIN CIADB01.USERTSS AS T1 ON T1.SYSID=U1.SYSID AND T1.USERID=U1.USERID ) "                                           
 										+"WHERE P1.SYSID = R1.SYSID "
 										+"AND   P1.SYSID <> \'SYSC\' "
 										+"AND   T1.ASUSPEND <> \'Y\' "
 										+"AND   P1.AUTHID = R1.ROLEID ";
 		
 		
-		String permQueryUserTemplate2a = 	 "','DATASET','%','PREFIX')) AS P2 INNER JOIN CIADB01.USERTSS AS T2 ON T2.SYSID=P2.SYSID AND T2.USERID=P2.AUTHID "  
+		String permQueryUserTemplate2a = 	 "','DATASET','%','PREFIX')) AS P2 LEFT JOIN CIADB01.USERTSS AS T2 ON T2.SYSID=P2.SYSID AND T2.USERID=P2.AUTHID "  
 										+"WHERE P2.AUTHTYPE = 'U' "
 				                        +"AND   T2.ASUSPEND <> \'Y\' "
 										+"AND   P2.SYSID <> \'SYSC\' ";
 
 		//VMVSE
 		String permQueryRoleTemplate2b = 	 "','%','PREFIX')) AS P1, "       
-						+ "(CIADB01.ROLEXREF AS R1 INNER JOIN CIADB01.USERINFO AS U1 ON R1.USERID=U1.USERID AND R1.SYSID=U1.SYSID INNER JOIN CIADB01.USERTSS AS T1 ON T1.SYSID=U1.SYSID AND T1.USERID=U1.USERID ) "                                           
+						+ "(CIADB01.ROLEXREF AS R1 INNER JOIN CIADB01.USERINFO AS U1 ON R1.USERID=U1.USERID AND R1.SYSID=U1.SYSID LEFT JOIN CIADB01.USERTSS AS T1 ON T1.SYSID=U1.SYSID AND T1.USERID=U1.USERID ) "                                           
 					+"WHERE P1.SYSID = R1.SYSID "
 					+"AND   T1.ASUSPEND <> \'Y\' "
 					+"AND   P1.AUTHID = R1.ROLEID ";
 
-		String permQueryUserTemplate2b = 	 "','%','PREFIX')) AS P2 INNER JOIN CIADB01.USERTSS AS T2 ON T2.SYSID=P2.SYSID AND T2.USERID=P2.AUTHID "  
+		String permQueryUserTemplate2b = 	 "','%','PREFIX')) AS P2 LEFT JOIN CIADB01.USERTSS AS T2 ON T2.SYSID=P2.SYSID AND T2.USERID=P2.AUTHID "  
 					+"WHERE P2.AUTHTYPE = 'U' "
 				    +"AND T2.ASUSPEND <> \'Y\' ";
 						 
