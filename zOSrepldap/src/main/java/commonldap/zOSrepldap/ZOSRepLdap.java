@@ -380,6 +380,7 @@ public class ZOSRepLdap {
 		String sBCC = "";
 		String sLogPath = "zOSrepldap.log";
 		String sMapFile = "tss_user_mapping.csv";
+		String sContactFile = "";
 		String sDB2Password = "";
 		String sImagDBPassword = "";	
 		boolean bShowTerminated = false;
@@ -398,6 +399,10 @@ public class ZOSRepLdap {
 			else if (args[i].compareToIgnoreCase("-mapfile") == 0 )
 			{
 				sMapFile = args[++i];
+			}			
+			else if (args[i].compareToIgnoreCase("-contactfile") == 0 )
+			{
+				sContactFile = args[++i];
 			}			
 			else if (args[i].compareToIgnoreCase("-bcc") == 0 )
 			{
@@ -441,6 +446,8 @@ public class ZOSRepLdap {
 	        }
 	        
 			JCaContainer cContact = new JCaContainer();
+			if (!sContactFile.isEmpty())
+				frame.sContactFile = sContactFile;
 			frame.readSourceMinderContacts(cContact, "Mainframe", cLDAP);
 
 			JCaContainer cRepoInfo = new JCaContainer();
