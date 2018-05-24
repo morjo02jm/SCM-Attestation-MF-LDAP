@@ -616,7 +616,7 @@ public class ZOSRepLdap {
 				String email = frame.expandDistributionListforEmail("cn=Team - GIS - githubcom - Tools Services - Contacts,ou=self service groups,ou=groups", cLDAP);
 				String sSubject, sTicket, sScope;
 				if (email.startsWith(";"))
-					email = email.substring(1);
+					email = email.substring(1); 
 				
 				if (sProblems.contains("terminated user")) {
 					email = email+";bigag01@ca.com"; //Team-GIS-Mainframe-PlatformManagement-Security?
