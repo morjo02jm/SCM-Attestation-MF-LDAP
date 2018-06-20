@@ -25,6 +25,9 @@ public class ZOSRepLdap {
 	
 	// Notification
 	static String tagUL = "<ul> ";
+	
+	// JDBC
+	private static String sDB2 = "jdbc:db2://usilca31.ca.com:5220/PP0ADB2"; //was "jdbc:db2://CA31:5122/DA0GPTIB"
 
 	ZOSRepLdap() {
 		// Leaving empty		
@@ -204,7 +207,7 @@ public class ZOSRepLdap {
 		ResultSet rSet;
 		
 		String sqlError = "DB2. Unable to execute query.";
-		String sJDBC = "jdbc:db2://CA31:5122/DA0GPTIB:retrieveMessagesFromServerOnGetMessage=true;emulateParameterMetaDataForZCalls=1;;user=ATTAUT1;password="+sDB2Password+";";
+		String sJDBC = sDB2+":retrieveMessagesFromServerOnGetMessage=true;emulateParameterMetaDataForZCalls=1;;user=ATTAUT1;password="+sDB2Password+";";
 		
 		try {
 			Class.forName("com.ibm.db2.jcc.DB2Driver");
