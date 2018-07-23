@@ -500,7 +500,7 @@ public class ZOSRepLdap {
 				if (sApprover.isEmpty()) {
 		    		if (sProblems.isEmpty()) 
 		    			sProblems = tagUL;			    		
-		    		sProblems+= "<li>The Mainframe product, <b>"+sProject+"</b>, has no valid contact.</li>\n";									
+		    		sProblems+= "<li>The Mainframe product, <b>"+sProject+"</b>, has no valid contact.<br>Action to be taken: GIS to review and update approvers for this product.</li>\n";									
 				}
 				
 				int[] iProjects = cRepoInfo.find("PRODUCT", sProject);
@@ -558,13 +558,13 @@ public class ZOSRepLdap {
 									if (bUnmapped) {
 							    		if (sProblems.isEmpty()) 
 							    			sProblems = tagUL;			    		
-							    		sProblems+= "<li>The Mainframe dataset user id, <b>"+sID+"</b>, references an unmapped user.</li>\n";									
+							    		sProblems+= "<li>The Mainframe dataset user id, <b>"+sID+"</b>, references an unmapped user.<br>Action to be taken: GIS to provide a mapping for this user.</li>\n";									
 									}
 									else {				
 										if (bShowTerminated) {											
 								    		if (sProblems.isEmpty()) 
 								    			sProblems = tagUL;			    		
-								    		sProblems+= "<li>The Mainframe SCM user id, <b>"+sID+"</b>, references a terminated user.</li>\n";									
+								    		sProblems+= "<li>The Mainframe SCM user id, <b>"+sID+"</b>, references a terminated user.<br>Action to be taken: TSS Administrators to remove access records for this user.</li>\n";									
 										}
 									}
 									
