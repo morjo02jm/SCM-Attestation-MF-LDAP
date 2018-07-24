@@ -419,6 +419,10 @@ public class ZOSRepLdap {
 			{
 				bShowTerminated = true;
 			}	
+			else if (args[i].compareToIgnoreCase("-oldciadb") == 0 )
+			{
+				sDB2 = "jdbc:db2://CA31:5122/DA0GPTIB"; 
+			}	
 			else {
 				System.out.println("Argument: "+args[i]);
 				System.out.println("Usage: zOSrepldap \n"+
