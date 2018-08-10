@@ -27,7 +27,7 @@ public class ZOSRepLdap {
 	static String tagUL = "<ul> ";
 	
 	// JDBC
-	private static String sDB2 =  "jdbc:db2://usilca31.ca.com:5220/PP0ADB2"; //"jdbc:db2://mspsprod.ca.com:5220/PP0ADB2";
+	private static String sDB2 =  "jdbc:db2://mspsprod.ca.com:5220/PP0ADB2"; //"jdbc:db2://usilca31.ca.com:5220/PP0ADB2";
 
 	ZOSRepLdap() {
 		// Leaving empty		
