@@ -27,13 +27,13 @@ public class ZOSRepLdap {
 	static String tagUL = "<ul> ";
 	
 	// JDBC
-	private static String sDB2 =  "jdbc:db2://usildamd.ca.com:5220/PP0ADB2"; //"jdbc:db2://usilca31.ca.com:5220/PP0ADB2"; 
+	private static String sDB2 =  "jdbc:db2://usildamd.ca.com:5220/PP0ADB2"; // "jdbc:db2://mspsprod.ca.com:5220/PP0ADB2"; //"jdbc:db2://usilca31.ca.com:5220/PP0ADB2"; 
 
 	ZOSRepLdap() {
 		// Leaving empty		
 	}
 
-	private static String buildDsnCiaQuery(String sProduct,
+	private static List<String> buildDsnCiaQuery(String sProduct,
 			                               String stemMaster,
 			                               boolean isDSN,
 			                               boolean isVMVSE,
@@ -123,7 +123,9 @@ public class ZOSRepLdap {
 					+"WHERE P2.AUTHTYPE = 'U' "
 				    +"AND T2.ASUSPEND <> \'Y\' ";
 						 
-		String permQuery = "";
+		//String permQuery = "";
+		List<String> permQuery = new ArrayList<String>();
+		int ii=0;
 				
 		if (isDSN && stemMaster != null && !stemMaster.contentEquals("Type:;SFS"))
 		{
@@ -166,32 +168,35 @@ public class ZOSRepLdap {
 		{
 			for (int i = 0; i < stems.length; i++)
 			{
-				permQuery += permQueryRoleTemplate1 + stems[i] + permQueryRoleTemplate2a + " UNION ";
+				//permQuery += permQueryRoleTemplate1 + stems[i] + permQueryRoleTemplate2a + " UNION ";
+				permQuery.add(permQueryRoleTemplate1 + stems[i] + permQueryRoleTemplate2a);
 			}
 										
 			
 			for (int i = 0; i < stems.length; i++)
 			{
-				permQuery += permQueryUserTemplate1 + stems[i] + permQueryUserTemplate2a; 
-				if (i < stems.length - 1 || locationsExist) permQuery += " UNION ";
+				//permQuery += permQueryUserTemplate1 + stems[i] + permQueryUserTemplate2a; 
+				//if (i < stems.length - 1 || locationsExist) permQuery += " UNION ";
+				permQuery.add(permQueryUserTemplate1 + stems[i] + permQueryUserTemplate2a);
 			}
 		}
 		
 		if (locationsExist) {
 			for (int i = 0; i < locations.size(); i++)
 			{
-				permQuery += permQueryRoleTemplate1 + locations.get(i) + "','" + types.get(i) + permQueryRoleTemplate2b + " UNION ";					
+				//permQuery += permQueryRoleTemplate1 + locations.get(i) + "','" + types.get(i) + permQueryRoleTemplate2b + " UNION ";	
+				permQuery.add(permQueryRoleTemplate1 + locations.get(i) + "','" + types.get(i) + permQueryRoleTemplate2b);
 			}
 			
 			for (int i = 0; i < locations.size(); i++)
 			{
-				permQuery += permQueryUserTemplate1 + locations.get(i) + "','" + types.get(i) + permQueryUserTemplate2b; 
-				
-				if (i < locations.size() - 1) permQuery += " UNION ";
+				//permQuery += permQueryUserTemplate1 + locations.get(i) + "','" + types.get(i) + permQueryUserTemplate2b; 			
+				//if (i < locations.size() - 1) permQuery += " UNION ";
+				permQuery.add(permQueryUserTemplate1 + locations.get(i) + "','" + types.get(i) + permQueryUserTemplate2b);
 			}			
 		}
 				
-		permQuery = permQuery + ";";
+		//permQuery = permQuery + ";";
 
 		return permQuery;
 	} // buildDsnCiaQuery
@@ -477,8 +482,19 @@ public class ZOSRepLdap {
 								int cIndex = sStemMaster.indexOf("Directories:;");
 								sStemMaster = sStemMaster.substring(cIndex+13);
 							}
-							String sQuery = buildDsnCiaQuery(sProduct, sStemMaster, isDSN, isVMVSE, sVMVSEMaster);
-							readDBToRepoContainer(cRepoInfo, sDB2Password, sQuery, sProduct);
+							List<String> sQuery = buildDsnCiaQuery(sProduct, sStemMaster, isDSN, isVMVSE, sVMVSEMaster);
+							
+/*
+							for (int ii=0; ii<sQuery.size(); ii++)
+								readDBToRepoContainer(cRepoInfo, sDB2Password, sQuery.get(ii), sProduct);
+*/
+							String sQueryAll = "";
+							for (int ii=0; ii<sQuery.size(); ii++) {
+								if (ii>0)
+									sQueryAll+= " UNION ";
+								sQueryAll+=sQuery.get(ii);
+							}
+							readDBToRepoContainer(cRepoInfo, sDB2Password, sQueryAll+" ;", sProduct);
 						}						
 					}
 				}
